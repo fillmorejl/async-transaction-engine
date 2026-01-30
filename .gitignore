@@ -1,0 +1,8 @@
+# output
+/target
+
+# ide
+.idea/
+.vscode/
+
+accounts.csv
