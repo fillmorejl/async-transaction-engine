@@ -9,9 +9,9 @@ tracing = { version = "0.1.44", features = [] }
 tracing-subscriber = { version = "0.3.22", features = ["fmt"] }
 thiserror = { version = "2.0.18", features = [] }
 anyhow = { version = "1.0.100", features = [] }
-futures = { version = "0.3.31", features = [] }
 serde = { version = "1.0.228", features = ["derive"] }
 csv = { version = "1.4.0", features = [] }
+moka = { version = "0.12.13", features = ["future"] }
 dashmap = { version = "6.1.0", features = [] }
 
 [[bin]]
@@ -28,3 +28,6 @@ debug-assertions = false
 overflow-checks = false
 incremental = false
 debug = "none"
+
+[dev-dependencies]
+tempfile = "3.24.0"

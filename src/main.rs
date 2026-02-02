@@ -31,7 +31,7 @@ async fn main() -> Result<()> {
 
     let path = &args[1];
     let log_level = args.get(2)
-        .map(|s| parse_log_level(s)).unwrap_or(LevelFilter::ERROR);
+        .map(|s| parse_log_level(s)).unwrap_or_else(|| LevelFilter::ERROR);
 
     setup_logging(log_level);
 
@@ -64,6 +64,7 @@ fn parse_log_level(level: &str) -> LevelFilter {
 }
 
 fn setup_logging(level: LevelFilter) {
+    //NOTE: Because we are doing stdout redirection, we will need to utilize stderr to display logging
     let terminal_log = fmt::layer()
         .with_target(false)
         .with_writer(stderr)
