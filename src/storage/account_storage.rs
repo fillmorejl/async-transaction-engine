@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
+use dashmap::iter::Iter;
+use dashmap::DashMap;
+
 use crate::models::Account;
 use crate::storage::Storage;
 use crate::types::AccountId;
-use dashmap::iter::Iter;
-use dashmap::DashMap;
-use std::sync::Arc;
 
 pub struct AccountStorage {
     cache: Arc<DashMap<AccountId, Account>>

@@ -1,7 +1,8 @@
+use std::collections::HashMap;
+
 use crate::models::errors::AccountError;
 use crate::models::{DisputeStatus, Transaction, TransactionType};
 use crate::types::{AccountId, Monetary, TransactionId};
-use std::collections::HashMap;
 
 /// Represents the state of a single client account.
 ///

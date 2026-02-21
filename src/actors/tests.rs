@@ -1,11 +1,14 @@
 use super::AccountActor;
+
+use std::str::FromStr;
+use std::sync::Arc;
+
+use anyhow::{anyhow, Result};
+use tokio::sync::mpsc;
+
 use crate::models::{Transaction, TransactionType};
 use crate::storage::{AccountStorage, Storage};
 use crate::types::{AccountId, Monetary};
-use anyhow::{anyhow, Result};
-use std::str::FromStr;
-use std::sync::Arc;
-use tokio::sync::mpsc;
 
 /// Helper to create a transaction easily.
 fn create_transaction(transaction_type: TransactionType, transaction_id: u32, account_id: u16, amount: &str) -> Result<Transaction> {

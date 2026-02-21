@@ -1,10 +1,12 @@
-use crate::models::{Account, Transaction};
-use crate::storage::Storage;
-use crate::types::AccountId;
 use std::sync::Arc;
+
 use tokio::spawn;
 use tokio::sync::mpsc;
 use tracing::{debug, warn};
+
+use crate::models::{Account, Transaction};
+use crate::storage::Storage;
+use crate::types::AccountId;
 
 pub struct AccountActor;
 

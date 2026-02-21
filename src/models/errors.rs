@@ -1,6 +1,7 @@
+use thiserror::Error;
+
 use crate::models::{Transaction, TransactionType};
 use crate::types::{AccountId, TransactionId};
-use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum AccountError {

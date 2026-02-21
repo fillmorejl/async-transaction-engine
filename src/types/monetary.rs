@@ -1,10 +1,12 @@
-use crate::types::errors::MonetaryError;
-use serde::{de, Deserialize, Deserializer};
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::{AddAssign, SubAssign};
 use std::str::FromStr;
+
+use serde::{de, Deserialize, Deserializer};
 use tracing::error;
+
+use crate::types::errors::MonetaryError;
 
 const DECIMAL_PLACES: usize = 4;
 const SCALE: i64 = 10i64.pow(DECIMAL_PLACES as u32);

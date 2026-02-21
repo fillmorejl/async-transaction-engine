@@ -4,18 +4,20 @@ mod models;
 mod storage;
 mod types;
 
-use crate::engine::AsyncEngine;
-use crate::storage::AccountStorage;
-use anyhow::Result;
 use std::io::{stderr, stdout, BufWriter, Write};
 use std::process::exit;
 use std::sync::Arc;
 use std::time::Instant;
+
+use anyhow::Result;
 use tracing::info;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::{fmt, Layer};
+
+use crate::engine::AsyncEngine;
+use crate::storage::AccountStorage;
 
 #[tokio::main]
 async fn main() -> Result<()> {

@@ -1,25 +1,27 @@
-use crate::actors::AccountActor;
-use crate::models::Transaction;
-use crate::storage::Storage;
-use crate::types::AccountId;
-use anyhow::Result;
-use csv::{ReaderBuilder, Trim};
-use moka::future::Cache;
 use std::fs::File;
 use std::io::BufReader;
 use std::sync::Arc;
 use std::time::Duration;
+
+use anyhow::Result;
+use csv::{ReaderBuilder, Trim};
+use moka::future::Cache;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::UnboundedSender;
 use tokio::task::{spawn_blocking, JoinHandle};
 use tracing::{debug, error};
+
+use crate::actors::AccountActor;
+use crate::models::Transaction;
+use crate::storage::Storage;
+use crate::types::AccountId;
 
 /// High-performance async transaction processing engine.
 pub struct AsyncEngine<S: Storage> {
     storage: Arc<S>,
     backpressure: usize,
     cache_capacity: u64,
-    cache_timeout: Duration,
+    cache_timeout: Duration
 }
 
 #[allow(dead_code)]
@@ -99,13 +101,15 @@ impl<S: Storage> AsyncEngine<S> {
 
         //NOTE: In a production system, this loop mimics a Kafka consumer stream. Partitioning by an agreed upon ID ensures strict ordering per client.
         while let Some(transaction) = receiver.recv().await {
+            let account_id = transaction.account_id;
+            let transaction_id = transaction.transaction_id;
 
-            let sender = cache.get_with(transaction.account_id, async {
+            let sender = cache.get_with(account_id, async {
                 AccountActor::spawn(transaction.account_id, self.storage.clone(), guard_sender.clone())
             }).await;
 
-            if sender.send(transaction.clone()).is_err() {
-                error!("Account actor for client [{}] could not accept transaction [{}]", transaction.account_id, transaction.transaction_id);
+            if sender.send(transaction).is_err() {
+                error!("Account actor for client [{}] could not accept transaction [{}]", account_id, transaction_id);
             }
         }
 
