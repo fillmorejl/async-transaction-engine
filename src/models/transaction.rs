@@ -1,6 +1,7 @@
+use serde::Deserialize;
+
 use crate::models::TransactionType;
 use crate::types::{AccountId, Monetary, TransactionId};
-use serde::Deserialize;
 
 /// Represents a single row from the input CSV file.
 ///

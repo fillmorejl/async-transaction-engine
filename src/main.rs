@@ -4,18 +4,20 @@ mod models;
 mod storage;
 mod types;
 
-use crate::engine::AsyncEngine;
-use crate::storage::AccountStorage;
-use anyhow::Result;
 use std::io::{stderr, stdout, BufWriter, Write};
 use std::process::exit;
 use std::sync::Arc;
 use std::time::Instant;
+
+use anyhow::Result;
 use tracing::info;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::{fmt, Layer};
+
+use crate::engine::AsyncEngine;
+use crate::storage::AccountStorage;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -31,7 +33,7 @@ async fn main() -> Result<()> {
 
     let path = &args[1];
     let log_level = args.get(2)
-        .map(|s| parse_log_level(s)).unwrap_or(LevelFilter::ERROR);
+        .map(|s| parse_log_level(s)).unwrap_or_else(|| LevelFilter::ERROR);
 
     setup_logging(log_level);
 
@@ -64,6 +66,7 @@ fn parse_log_level(level: &str) -> LevelFilter {
 }
 
 fn setup_logging(level: LevelFilter) {
+    //NOTE: Because we are doing stdout redirection, we will need to utilize stderr to display logging
     let terminal_log = fmt::layer()
         .with_target(false)
         .with_writer(stderr)

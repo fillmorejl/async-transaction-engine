@@ -1,8 +1,11 @@
 use super::{AccountStorage, Storage};
+
+use std::str::FromStr;
+
+use anyhow::{anyhow, Result};
+
 use crate::models::Account;
 use crate::types::Monetary;
-use anyhow::{anyhow, Result};
-use std::str::FromStr;
 
 #[test]
 fn test_storage_basic_load_and_save_operations() -> Result<()> {

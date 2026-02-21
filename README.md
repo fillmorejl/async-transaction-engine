@@ -7,8 +7,9 @@ A high-performance, asynchronous transaction processing engine built in Rust. It
 - **Asynchronous Pipeline:** Built on `tokio` for efficient, non-blocking I/O and task scheduling.
 - **Streaming Processing:** Reads input incrementally using bounded channels, allowing the system to handle datasets larger than available memory with backpressure.
 - **Actor Model:** Each client account is managed by a dedicated actor, ensuring operations for a single account are serialized and race-free without complex locking mechanisms.
+- **Actor Passivation:** Leverages the `moka` cache to automatically manage actor lifecycles. Idle actors are "passivated" (persisted and dropped from memory) to ensure the system can scale to millions of unique accounts without exhausting RAM.
 - **Precision Math:** Uses a custom fixed-point `Monetary` type (4 decimal places) to avoid floating-point errors.
-- **High Performance:** Processes **500,000 transactions in ~200ms** (peaking at over **2.5 million transactions per second**) on an **Intel Core i9-14900K with 64GB DDR5 (6800 MT/s)**.
+- **High Performance:** Processes **500,000 transactions in ~300ms** (peaking at over **1.7 million transactions per second**) on an **Intel Core i9-14900K with 64GB DDR5 (6800 MT/s)**.
 - **Clean Architecture:** Designed with strict modularity to ensure the codebase remains readable, maintainable, and easily testable.
 - **Observability:** Integrated with the `tracing` ecosystem for structured logging, allowing for fine-grained monitoring of transaction flows and error states.
 
@@ -19,10 +20,11 @@ The system uses an actor architecture to ensure data integrity without global lo
 ![System Architecture](diagrams/actor_architecture.png)
 
 1.  **Ingestion:** A dedicated task streams CSV records into a bounded `mpsc` channel, providing backpressure for large datasets.
-2.  **Dispatch:** Transactions are routed to client-specific `AccountActors`. This ensures all operations for a single client are serialized, preventing race conditions on balances.
-3.  **Processing:** Actors apply business logic (deposits, disputes, etc.) and maintain local transaction history for dispute resolution.
-4.  **Persistence:** Final states are persisted into a `DashMap` storage layer, allowing for efficient concurrent access during the final output phase.
-5.  **Output:** Results are streamed to STDOUT using a buffered writer to minimize overhead.
+2.  **Dispatch:** Transactions are routed to client-specific `AccountActors` via an LRU cache (`moka`). This ensures all operations for a single client are serialized, preventing race conditions on balances.
+3.  **Passivation & Re-hydration:** To efficiently manage millions of accounts, actors are only active in memory while processing transactions. If an actor becomes idle or the cache reaches capacity, it is automatically "passivated" (dropped from memory) after its state is persisted. When a new transaction for that account arrives, the actor is "re-hydrated" from storage.
+4.  **Processing:** Actors apply business logic (deposits, disputes, etc.) and maintain local transaction history for dispute resolution.
+5.  **Persistence:** Final states are persisted into an optimized `DashMap` storage layer, allowing for efficient concurrent access during the final output phase.
+6.  **Output:** Results are streamed to STDOUT using a buffered writer to minimize overhead.
 
 ## Concurrency & Safety
 
@@ -35,6 +37,15 @@ The system uses an actor architecture to ensure data integrity without global lo
 
 ### Why Actors?
 Financial transactions for a single account must be processed in order (e.g., you can't withdraw funds before you deposit them). However, transactions for *different* accounts are independent. The Actor Model fits this perfectly: strict serialization for a single client, but massive parallelism across different clients.
+
+### Why Moka / Actor Passivation?
+A production transaction engine might process transactions for millions of unique accounts. Keeping all those actors and their channels alive in memory would quickly exhaust system resources. By using `moka` to manage our actors, we can implement an LRU (Least Recently Used) cache policy. This allows the system to keep "hot" accounts (those with high transaction volume) in memory while "passivating" (storing to disk/DB and dropping) accounts that have gone idle. 
+
+By default, the engine is configured with:
+- **Max Capacity:** 5,000 active actors.
+- **Idle Timeout:** 5 minutes.
+
+This architecture allows the system to handle datasets far larger than available memory by only keeping active accounts in memory.
 
 ### Fixed-Point Arithmetic
 Using `f64` for currency is dangerous due to precision loss. With the help of AI, I implemented a `Monetary` struct wrapping `i64` with 4 decimal places of precision. This guarantees exactness for all supported operations.
@@ -89,6 +100,7 @@ The project leverages several high-quality Rust crates:
 - **csv:** High-performance, streaming CSV serialization/deserialization.
 - **serde:** The "de facto" framework for serializing and deserializing Rust data structures.
 - **dashmap:** A blazing-fast concurrent hash map used for the account storage layer.
+- **moka:** A high-performance, concurrent caching library used to manage our Actor lifecycles.
 - **tracing / tracing-subscriber:** For structured logging and diagnostic observability.
 - **anyhow / thiserror:** For robust and ergonomic error handling.
 - **futures:** Utilities for managing asynchronous control flow.
@@ -109,6 +121,18 @@ cargo test
 
 # Run a specific test (e.g., the correctness integration test)
 cargo test test_cli_outputs_correct_final_balances
+```
+
+## Stress Testing
+
+A high-volume stress test generator is provided as a Rust example. This script generates a CSV with realistic transaction flows (deposits, withdrawals, disputes, resolves, and chargebacks).
+
+```bash
+# Generate 1 million transactions for 10,000 clients
+cargo run --example generate_stress_test --release
+
+# Generate a custom amount (e.g., 5 million records for 50k clients)
+cargo run --example generate_stress_test --release -- 5000000 50000
 ```
 
 ## Building

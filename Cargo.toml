@@ -3,20 +3,25 @@ name = "async-transaction-engine"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "async-transaction-engine"
+path = "src/main.rs"
+
 [dependencies]
 tokio = { version = "1.49.0", features = ["sync", "rt-multi-thread", "macros", "time"] }
 tracing = { version = "0.1.44", features = [] }
 tracing-subscriber = { version = "0.3.22", features = ["fmt"] }
 thiserror = { version = "2.0.18", features = [] }
-anyhow = { version = "1.0.100", features = [] }
-futures = { version = "0.3.31", features = [] }
+anyhow = { version = "1.0.102", features = [] }
 serde = { version = "1.0.228", features = ["derive"] }
 csv = { version = "1.4.0", features = [] }
+rust_decimal = { version = "1.40.0", features = ["serde"] }
 dashmap = { version = "6.1.0", features = [] }
+moka = { version = "0.12.13", features = ["future"] }
 
-[[bin]]
-name = "async-transaction-engine"
-path = "src/main.rs"
+[dev-dependencies]
+tempfile = "3.25.0"
+rand = "0.8.5"
 
 [profile.release]
 opt-level = 3

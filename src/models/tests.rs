@@ -1,8 +1,11 @@
 use super::{Account, Transaction, TransactionType};
+
+use std::str::FromStr;
+
+use anyhow::Result;
+
 use crate::models::errors::AccountError;
 use crate::types::{AccountId, Monetary, TransactionId};
-use anyhow::Result;
-use std::str::FromStr;
 
 fn create_transaction(transaction_type: TransactionType, transaction_id: TransactionId, account_id: AccountId, amount: Option<&str>) -> Result<Transaction> {
     Ok(Transaction {

@@ -1,6 +1,8 @@
 use super::Monetary;
-use anyhow::Result;
+
 use std::str::FromStr;
+
+use anyhow::Result;
 
 #[test]
 fn test_monetary_successfully_parses_valid_strings() -> Result<()> {
