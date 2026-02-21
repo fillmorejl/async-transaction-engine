@@ -3,9 +3,11 @@ use super::AsyncEngine;
 use anyhow::{anyhow, Result};
 use std::fs;
 use std::io::Write;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 
+use rust_decimal::Decimal;
 use tempfile::NamedTempFile;
 use tokio::time::sleep;
 
@@ -41,8 +43,8 @@ async fn test_engine_processes_valid_csv_stream_successfully() -> Result<()> {
     let mut accounts: Vec<_> = storage.iter().map(|item| item.value().clone()).collect();
     accounts.sort_by_key(|account| account.account_id);
 
-    assert_eq!(accounts[0].available.to_string(), "5.0000");
-    assert_eq!(accounts[1].available.to_string(), "20.0000");
+    assert_eq!(accounts[0].available, Decimal::from_str("5.0")?);
+    assert_eq!(accounts[1].available, Decimal::from_str("20.0")?);
 
     Ok(())
 }
@@ -60,7 +62,7 @@ async fn test_engine_gracefully_skips_malformed_csv_input() -> Result<()> {
 
     let accounts: Vec<_> = storage.iter().map(|item| item.value().clone()).collect();
 
-    assert_eq!(accounts[0].available.to_string(), "15.0000");
+    assert_eq!(accounts[0].available, Decimal::from_str("15.0")?);
 
     Ok(())
 }
@@ -89,8 +91,8 @@ async fn test_engine_correctly_orchestrates_complex_dispute_sequences() -> Resul
 
     let account = storage.iter().next().ok_or_else(|| anyhow!("Account missing from storage"))?.value().clone();
 
-    assert_eq!(account.available.to_string(), "160.0000");
-    assert_eq!(account.held.to_string(), "0.0000");
+    assert_eq!(account.available, Decimal::from_str("160.0")?);
+    assert!(account.held.is_zero());
     assert!(!account.locked);
     
     Ok(())
@@ -114,9 +116,9 @@ async fn test_cache_capacity_eviction() -> Result<()> {
 
     engine.run(file.path().to_str().unwrap()).await?;
 
-    assert_eq!(storage.load(1).unwrap().available.to_string(), "20.0000");
-    assert_eq!(storage.load(2).unwrap().available.to_string(), "10.0000");
-    assert_eq!(storage.load(3).unwrap().available.to_string(), "10.0000");
+    assert_eq!(storage.load(1).unwrap().available, Decimal::from_str("20.0")?);
+    assert_eq!(storage.load(2).unwrap().available, Decimal::from_str("10.0")?);
+    assert_eq!(storage.load(3).unwrap().available, Decimal::from_str("10.0")?);
 
     Ok(())
 }
@@ -144,7 +146,7 @@ async fn test_cache_time_eviction() -> Result<()> {
 
     engine.run(file2.path().to_str().unwrap()).await?;
 
-    assert_eq!(storage.load(1).unwrap().available.to_string(), "30.0000");
+    assert_eq!(storage.load(1).unwrap().available, Decimal::from_str("30.0")?);
 
     Ok(())
 }

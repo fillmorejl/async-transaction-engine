@@ -8,8 +8,8 @@ A high-performance, asynchronous transaction processing engine built in Rust. It
 - **Streaming Processing:** Reads input incrementally using bounded channels, allowing the system to handle datasets larger than available memory with backpressure.
 - **Actor Model:** Each client account is managed by a dedicated actor, ensuring operations for a single account are serialized and race-free without complex locking mechanisms.
 - **Actor Passivation:** Leverages the `moka` cache to automatically manage actor lifecycles. Idle actors are "passivated" (persisted and dropped from memory) to ensure the system can scale to millions of unique accounts without exhausting RAM.
-- **Precision Math:** Uses a custom fixed-point `Monetary` type (4 decimal places) to avoid floating-point errors.
-- **High Performance:** Processes **500,000 transactions in ~300ms** (peaking at over **1.7 million transactions per second**) on an **Intel Core i9-14900K with 64GB DDR5 (6800 MT/s)**.
+- **Precision Math:** Uses the battle-tested `rust_decimal` crate for exact decimal arithmetic (4 decimal places) to avoid floating-point errors.
+- **High Performance:** Processes **500,000 transactions in ~285ms** (peaking at over **1.75 million transactions per second**) on an **Intel Core i9-14900K with 64GB DDR5 (6800 MT/s)**.
 - **Clean Architecture:** Designed with strict modularity to ensure the codebase remains readable, maintainable, and easily testable.
 - **Observability:** Integrated with the `tracing` ecosystem for structured logging, allowing for fine-grained monitoring of transaction flows and error states.
 
@@ -29,7 +29,7 @@ The system uses an actor architecture to ensure data integrity without global lo
 ## Concurrency & Safety
 
 - **Actor Isolation:** Shared state is eliminated by delegating account ownership to individual actors. This removes the need for mutexes/locks during the core processing phase.
-- **Arithmetic Safety:** The `Monetary` type utilizes `checked_add` and `checked_sub` throughout the state machine to prevent balance corruption on overflows.
+- **Arithmetic Safety:** The `rust_decimal` crate was used throughout the state machine to prevent balance corruption on overflows.
 - **Memory Safety:** The implementation uses **100% safe Rust**. No `unsafe` blocks are used in the engine, storage, or arithmetic utilities.
 - **Backpressure:** Bounded channels prevent memory exhaustion when processing files significantly larger than available memory.
 
@@ -47,8 +47,8 @@ By default, the engine is configured with:
 
 This architecture allows the system to handle datasets far larger than available memory by only keeping active accounts in memory.
 
-### Fixed-Point Arithmetic
-Using `f64` for currency is dangerous due to precision loss. With the help of AI, I implemented a `Monetary` struct wrapping `i64` with 4 decimal places of precision. This guarantees exactness for all supported operations.
+### Decimal Arithmetic
+Using `f64` for currency is dangerous due to precision loss. The engine uses the `rust_decimal` crate, a well-tested, base-10 fixed-point decimal library providing up to 28 significant digits of precision. This guarantees exactness for all supported operations without the risk of floating-point rounding errors.
 
 ### Error Handling Strategy
 *   **Unrecoverable Errors:** Malformed CSV rows are skipped with an error log.
@@ -57,7 +57,7 @@ Using `f64` for currency is dangerous due to precision loss. With the help of AI
 
 ## Assumptions
 
-*   **Currency Precision:** All monetary values are handled with fixed-point arithmetic (4 decimal places) to prevent floating-point errors.
+*   **Currency Precision:** All monetary values are handled with the `rust_decimal` crate (formatted to 4 decimal places in output) to prevent floating-point errors.
 *   **Duplicate Transactions:** Transactions with duplicate IDs are rejected to ensure idempotency.
 *   **Negative Amounts:** The system explicitly rejects negative values for `deposit` and `withdrawal` transactions. A negative deposit is semantically a withdrawal but lacks the necessary "insufficient funds" checks. Allowing it would create a security vulnerability where users could bypass balance checks or corrupt dispute states.
 *   **Locked Accounts:** Once an account is locked (due to a chargeback), it rejects all subsequent transactions.
@@ -85,10 +85,7 @@ src
 │   ├── account_storage.rs  # DashMap-backed storage
 │   └── tests.rs            # Storage persistence tests
 ├── types
-│   ├── mod.rs
-│   ├── errors.rs           # MonetaryError definitions
-│   ├── monetary.rs         # Fixed-point arithmetic
-│   └── tests.rs            # Arithmetic and parsing unit tests
+│   └── mod.rs              # AccountId and TransactionId type aliases
 └── main.rs                 # CLI entry, logging, and output
 ```
 
@@ -102,8 +99,8 @@ The project leverages several high-quality Rust crates:
 - **dashmap:** A blazing-fast concurrent hash map used for the account storage layer.
 - **moka:** A high-performance, concurrent caching library used to manage our Actor lifecycles.
 - **tracing / tracing-subscriber:** For structured logging and diagnostic observability.
+- **rust_decimal:** A base-10 fixed-point decimal library providing exact arithmetic for monetary values.
 - **anyhow / thiserror:** For robust and ergonomic error handling.
-- **futures:** Utilities for managing asynchronous control flow.
 
 ### Security Audit
 As of January 30, 2026, all dependencies have been verified to be vulnerability-free according to the Rust Advisory Database. If you have `cargo-audit` installed, you can verify this by running:
@@ -181,7 +178,6 @@ While this CLI tool operates on a local CSV, the architecture was designed to re
 ## AI Usage
 
 - AI was used to generate the sample data, method documentation (comments), some documentation cleanup, and some of the unit tests, cleanup and optimization was performed by hand.
-- AI was used to discuss a fixed point arithmetic `Monetary` type.  It helped generate the basis of this type and several traits but, not all code for this type, cleanup and optimization was performed by hand.
 - The remainder of the code and the architectural/design decisions are my own work.
 
 ## Author

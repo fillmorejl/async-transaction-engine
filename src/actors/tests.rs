@@ -4,11 +4,12 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
+use rust_decimal::Decimal;
 use tokio::sync::mpsc;
 
 use crate::models::{Transaction, TransactionType};
 use crate::storage::{AccountStorage, Storage};
-use crate::types::{AccountId, Monetary};
+use crate::types::AccountId;
 
 /// Helper to create a transaction easily.
 fn create_transaction(transaction_type: TransactionType, transaction_id: u32, account_id: u16, amount: &str) -> Result<Transaction> {
@@ -16,7 +17,7 @@ fn create_transaction(transaction_type: TransactionType, transaction_id: u32, ac
         transaction_type,
         transaction_id,
         account_id,
-        amount: Some(Monetary::from_str(amount)?)
+        amount: Some(Decimal::from_str(amount)?)
     })
 }
 
@@ -74,8 +75,8 @@ async fn test_actor_isolation_and_storage_persistence() -> Result<()> {
     let account1 = storage.load(1).ok_or_else(|| anyhow!("Account 1 missing"))?;
     let account2 = storage.load(2).ok_or_else(|| anyhow!("Account 2 missing"))?;
 
-    assert_eq!(account1.available.to_string(), "50.0000");
-    assert_eq!(account2.available.to_string(), "200.0000");
+    assert_eq!(account1.available, Decimal::from_str("50.0")?);
+    assert_eq!(account2.available, Decimal::from_str("200.0")?);
 
     Ok(())
 }
@@ -93,7 +94,7 @@ async fn test_actor_maintains_resilience_to_business_logic_errors() -> Result<()
 
     let account = storage.load(1).ok_or_else(|| anyhow!("Account missing"))?;
 
-    assert_eq!(account.available.to_string(), "30.0000");
+    assert_eq!(account.available, Decimal::from_str("30.0")?);
 
     Ok(())
 }

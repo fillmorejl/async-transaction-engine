@@ -84,12 +84,12 @@ fn write_results_to_stdout(storage: Arc<AccountStorage>) -> Result<()> {
     
     for account in storage.iter() {
         writeln!(
-            output, 
-            "{},{},{},{},{}", 
-            account.account_id, 
-            account.available, 
-            account.held, 
-            account.total(), 
+            output,
+            "{},{:.4},{:.4},{:.4},{}",
+            account.account_id,
+            account.available,
+            account.held,
+            account.total(),
             account.locked
         )?;
     }

@@ -3,9 +3,9 @@ use super::{AccountStorage, Storage};
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
+use rust_decimal::Decimal;
 
 use crate::models::Account;
-use crate::types::Monetary;
 
 #[test]
 fn test_storage_basic_load_and_save_operations() -> Result<()> {
@@ -14,13 +14,13 @@ fn test_storage_basic_load_and_save_operations() -> Result<()> {
     assert!(storage.load(99).is_none());
 
     let mut account = Account::new(1);
-    account.available = Monetary::from_str("100.0")?;
+    account.available = Decimal::from_str("100.0")?;
     storage.save(1, account);
     
     let retrieved_account = storage.load(1).ok_or_else(|| anyhow!("Account not found in storage"))?;
     
     assert_eq!(retrieved_account.account_id, 1);
-    assert_eq!(retrieved_account.available.to_string(), "100.0000");
+    assert_eq!(retrieved_account.available, Decimal::from_str("100.0")?);
 
     Ok(())
 }
@@ -40,16 +40,16 @@ fn test_storage_enforces_correct_overwrite_semantics() -> Result<()> {
     let storage = AccountStorage::new();
     
     let mut account_version_1 = Account::new(1);
-    account_version_1.available = Monetary::from_str("10.0")?;
+    account_version_1.available = Decimal::from_str("10.0")?;
     storage.save(1, account_version_1);
     
     let mut account_version_2 = storage.load(1).ok_or_else(|| anyhow!("Account v1 missing"))?;
-    account_version_2.available = Monetary::from_str("20.0")?;
+    account_version_2.available = Decimal::from_str("20.0")?;
     storage.save(1, account_version_2);
     
     let final_account = storage.load(1).ok_or_else(|| anyhow!("Final account version missing"))?;
 
-    assert_eq!(final_account.available.to_string(), "20.0000");
+    assert_eq!(final_account.available, Decimal::from_str("20.0")?);
 
     Ok(())
 }

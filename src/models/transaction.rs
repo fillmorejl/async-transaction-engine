@@ -1,7 +1,8 @@
+use rust_decimal::Decimal;
 use serde::Deserialize;
 
 use crate::models::TransactionType;
-use crate::types::{AccountId, Monetary, TransactionId};
+use crate::types::{AccountId, TransactionId};
 
 /// Represents a single row from the input CSV file.
 ///
@@ -20,5 +21,5 @@ pub struct Transaction {
     #[serde(rename = "client")]
     pub account_id: AccountId,
     /// The amount of funds involved (if applicable).
-    pub amount: Option<Monetary>
+    pub amount: Option<Decimal>
 }
