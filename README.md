@@ -103,7 +103,7 @@ The project leverages several high-quality Rust crates:
 - **anyhow / thiserror:** For robust and ergonomic error handling.
 
 ### Security Audit
-As of January 30, 2026, all dependencies have been verified to be vulnerability-free according to the Rust Advisory Database. If you have `cargo-audit` installed, you can verify this by running:
+As of February 21, 2026, all dependencies have been verified to be vulnerability-free according to the Rust Advisory Database. If you have `cargo-audit` installed, you can verify this by running:
 ```bash
 cargo audit
 ```
