@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
+use rust_decimal::Decimal;
+
 use crate::models::errors::AccountError;
 use crate::models::{DisputeStatus, Transaction, TransactionType};
-use crate::types::{AccountId, Monetary, TransactionId};
+use crate::types::{AccountId, TransactionId};
 
 /// Represents the state of a single client account.
 ///
@@ -13,14 +15,14 @@ pub struct Account {
     /// The unique identifier for the client.
     pub account_id: AccountId,
     /// Funds available for withdrawal or trading.
-    pub available: Monetary,
+    pub available: Decimal,
     /// Funds held due to active disputes.
-    pub held: Monetary,
+    pub held: Decimal,
     /// Whether the account is frozen (due to a chargeback).
     pub locked: bool,
     /// History of all successful deposits, mapped by transaction ID.
     /// Used to reference the amount during disputes.
-    ledger: HashMap<TransactionId, Monetary>,
+    ledger: HashMap<TransactionId, Decimal>,
     /// Status of active or past disputes, mapped by transaction ID.
     disputes: HashMap<TransactionId, DisputeStatus>
 }
@@ -30,8 +32,8 @@ impl Account {
     pub fn new(account_id: AccountId) -> Self {
         Self {
             account_id,
-            available: Monetary::new(),
-            held: Monetary::new(),
+            available: Decimal::ZERO,
+            held: Decimal::ZERO,
             locked: false,
             ledger: HashMap::new(),
             disputes: HashMap::new()
@@ -64,7 +66,7 @@ impl Account {
     }
 
     /// Calculates the total funds (available + held).
-    pub fn total(&self) -> Monetary {
+    pub fn total(&self) -> Decimal {
         let mut total = self.available;
         total += self.held;
         total
@@ -79,7 +81,7 @@ impl Account {
             return Err(AccountError::amount_required(transaction))
         };
 
-        if amount.is_negative() {
+        if amount.is_sign_negative() {
             return Err(AccountError::negative_amount(transaction))
         }
 
@@ -96,7 +98,7 @@ impl Account {
             return Err(AccountError::amount_required(transaction))
         };
 
-        if amount.is_negative() {
+        if amount.is_sign_negative() {
             return Err(AccountError::negative_amount(transaction))
         }
 
@@ -156,7 +158,7 @@ impl Account {
         Ok(())
     }
 
-    fn get_deposit(&self, transaction: &Transaction) -> Result<Monetary, AccountError> {
+    fn get_deposit(&self, transaction: &Transaction) -> Result<Decimal, AccountError> {
         self.ledger.get(&transaction.transaction_id).copied()
             .ok_or_else(|| AccountError::transaction_not_found(transaction))
     }
