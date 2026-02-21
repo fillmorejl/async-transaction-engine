@@ -4,8 +4,9 @@ use std::fs::{create_dir_all, File};
 use std::io::{self, stdout, Write};
 use std::path::Path;
 
-use rand::seq::{IteratorRandom, SliceRandom};
-use rand::Rng;
+use rand::prelude::IndexedRandom;
+use rand::seq::IteratorRandom;
+use rand::{Rng, RngExt};
 use rust_decimal::prelude::FromPrimitive;
 use rust_decimal::Decimal;
 
@@ -56,13 +57,13 @@ fn main() -> io::Result<()> {
 
     writeln!(writer, "type,client,tx,amount")?;
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let mut client_deposit_history: HashMap<u16, Vec<u32>> = HashMap::with_capacity(config.num_clients);
     let mut client_active_disputes: HashMap<u16, HashSet<u32>> = HashMap::with_capacity(config.num_clients);
 
     for tx_id in 1..=config.num_records as u32 {
-        let client_id = rng.gen_range(1..=config.num_clients as u16);
-        let roll: f64 = rng.r#gen();
+        let client_id = rng.random_range(1..=config.num_clients as u16);
+        let roll: f64 = rng.random();
 
         if roll < PROBABILITY_DEPOSIT {
             generate_deposit(&mut writer, &mut rng, client_id, tx_id, &mut client_deposit_history)?;
@@ -90,10 +91,10 @@ fn main() -> io::Result<()> {
 }
 
 fn generate_random_amount<R: Rng>(rng: &mut R, max: f64) -> Decimal {
-    let amount_val = if rng.gen_bool(0.05) {
-        rng.gen_range(-1000.0..-0.0001)
+    let amount_val = if rng.random_bool(0.05) {
+        rng.random_range(-1000.0..-0.0001)
     } else {
-        rng.gen_range(0.0001..max)
+        rng.random_range(0.0001..max)
     };
 
     Decimal::from_f64(amount_val).unwrap().round_dp(4)
